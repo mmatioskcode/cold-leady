@@ -4,6 +4,7 @@
 # Pyta o hasło z sekretu LEADY_HASLO. Wynik: pliki .csv obok zaszyfrowanych.
 set -e
 cel="${1:-.}"
+if [[ "$cel" == *.zip && ! -f "$cel" && -d "${cel%.zip}" ]]; then cel="${cel%.zip}"; fi   # Safari sam rozpakowuje
 if [[ "$cel" == *.zip ]]; then d="${cel%.zip}"; mkdir -p "$d"; unzip -o -q "$cel" -d "$d"; cel="$d"; fi
 read -r -s -p "Hasło LEADY_HASLO: " LEADY_HASLO </dev/tty; echo; export LEADY_HASLO
 for f in "$cel"/*.csv.enc; do
