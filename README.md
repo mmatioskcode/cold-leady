@@ -13,6 +13,11 @@ a log i podsumowanie zawierają tylko liczby.
 | `CEIDG_TOKEN` | token API hurtowni danych CEIDG |
 | `ANTHROPIC_API_KEY` | klucz API Claude (Haiku 5.5 ocenia nazwy firm i zgaduje domeny) |
 | `LEADY_HASLO` | dowolne długie hasło do szyfrowania pliku z leadami |
+| `MILLIONVERIFIER_API_KEY` | opcjonalnie: klucz MillionVerifier. Z nim do pliku trafiają tylko adresy „ok” i catch-all (maks. 10% partii, kolumna `weryfikacja`); invalid/unknown odpadają. Bez niego `weryfikacja` = `nie_sprawdzono`. |
+
+Zawsze (za darmo) skrypt odrzuca adresy, których domena nie ma rekordu MX.
+
+Plik ma kolumny z planu wysyłki („Wejście z leadgenu”): `email, imie, firma, branza, miasto, www, sytuacja, obserwacja, zrodlo_adresu, data_pozyskania`, a dalej `weryfikacja, klasa, telefon, wojewodztwo, pkd, nip`.
 
 ## Pobranie leadów
 

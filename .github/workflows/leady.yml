@@ -41,7 +41,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install "anthropic>=0.80"
+      - run: pip install "anthropic>=0.80" "dnspython>=2.6"
       - name: Sprawdź sekrety
         env:
           A: ${{ secrets.CEIDG_TOKEN }}
@@ -62,8 +62,10 @@ jobs:
           CEIDG_TOKEN: ${{ secrets.CEIDG_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CEL_LEADOW: ${{ inputs.cel || '500' }}
+          MILLIONVERIFIER_API_KEY: ${{ secrets.MILLIONVERIFIER_API_KEY }}
           MAKS_MINUT: '320'
           LIMIT_USD: '0.50'
+          MV_LIMIT: '1500'
         run: python ceidg_cold.py ${{ inputs.tryb || 'dzien' }}
       - name: Zapisz stan
         if: always() && (inputs.tryb || 'dzien') == 'dzien'
