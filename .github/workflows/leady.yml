@@ -1,0 +1,94 @@
+name: Cold leady
+
+# Leady do cold maili StykDesign: CEIDG + Claude Haiku, w chmurze GitHuba (publiczne repo = minuty za darmo).
+# Repo jest PUBLICZNE, więc:
+#   - log i podsumowanie zawierają tylko liczby,
+#   - plik z leadami jest szyfrowany hasłem z sekretu LEADY_HASLO (AES-256, PBKDF2) przed wysłaniem jako artefakt,
+#   - stan w cache trzyma tylko numery CEIDG i skróty SHA-256 maili.
+# Partia = 500 leadów na jeden dzień roboczy, zbierana w maks. 3 przebiegach (CEIDG jest wolne i ma przerwy serwisowe).
+# Godziny w UTC; zimą Polska = UTC+1: 22:13, 03:43, 09:13.
+on:
+  schedule:
+    - cron: '13 21 * * 0-4'
+    - cron: '43 2 * * 1-5'
+    - cron: '13 8 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      tryb:
+        description: 'sonda = test połączenia z CEIDG (bez Claude); dzien = zbieranie leadów'
+        required: true
+        type: choice
+        options: [dzien, sonda]
+      cel:
+        description: 'Ile leadów na partię (dzień roboczy)'
+        required: false
+        default: '500'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cold-leady
+  cancel-in-progress: false
+
+jobs:
+  leady:
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install "anthropic>=0.80"
+      - name: Sprawdź sekrety
+        env:
+          A: ${{ secrets.CEIDG_TOKEN }}
+          B: ${{ secrets.ANTHROPIC_API_KEY }}
+          C: ${{ secrets.LEADY_HASLO }}
+        run: |
+          [ -n "$A" ] || { echo "Brak sekretu CEIDG_TOKEN"; exit 1; }
+          [ -n "$B" ] || { echo "Brak sekretu ANTHROPIC_API_KEY"; exit 1; }
+          [ -n "$C" ] || { echo "Brak sekretu LEADY_HASLO (bez niego nie zaszyfruję pliku)"; exit 1; }
+      - name: Wczytaj stan
+        uses: actions/cache/restore@v4
+        with:
+          path: stan
+          key: cold-stan-${{ github.run_id }}
+          restore-keys: cold-stan-
+      - name: Zbierz leady
+        env:
+          CEIDG_TOKEN: ${{ secrets.CEIDG_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CEL_LEADOW: ${{ inputs.cel || '500' }}
+          MAKS_MINUT: '320'
+          LIMIT_USD: '0.50'
+        run: python ceidg_cold.py ${{ inputs.tryb || 'dzien' }}
+      - name: Zapisz stan
+        if: always() && (inputs.tryb || 'dzien') == 'dzien'
+        uses: actions/cache/save@v4
+        with:
+          path: stan
+          key: cold-stan-${{ github.run_id }}
+      - name: Zaszyfruj plik z leadami
+        if: always() && (inputs.tryb || 'dzien') == 'dzien'
+        env:
+          LEADY_HASLO: ${{ secrets.LEADY_HASLO }}
+        run: |
+          mkdir -p wysylka
+          shopt -s nullglob
+          for f in wynik/*.csv; do
+            openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in "$f" -out "wysylka/$(basename "$f").enc" -pass env:LEADY_HASLO
+            shred -u "$f"
+          done
+          cp wynik/*.json wysylka/ 2>/dev/null || true
+          ls wysylka
+      - name: Wyślij zaszyfrowany plik
+        if: always() && (inputs.tryb || 'dzien') == 'dzien'
+        uses: actions/upload-artifact@v4
+        with:
+          name: leady-${{ github.run_id }}
+          path: wysylka/
+          retention-days: 30
+          if-no-files-found: ignore

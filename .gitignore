@@ -1,0 +1,7 @@
+stan/
+wynik/
+wysylka/
+*.csv
+*.csv.enc
+stan_ceidg*.json
+__pycache__/
