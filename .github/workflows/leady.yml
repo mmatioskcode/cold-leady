@@ -5,7 +5,7 @@ name: Cold leady
 #   - log i podsumowanie zawierają tylko liczby,
 #   - plik z leadami jest szyfrowany hasłem z sekretu LEADY_HASLO (AES-256, PBKDF2) przed wysłaniem jako artefakt,
 #   - stan w cache trzyma tylko numery CEIDG i skróty SHA-256 maili.
-# Partia = 500 leadów na jeden dzień roboczy, zbierana w maks. 3 przebiegach (CEIDG jest wolne i ma przerwy serwisowe).
+# Partia = 500 leadów na jeden dzień roboczy, zbierana w kilku kolejnych przebiegach.
 # CEIDG daje realnie ok. 250 zapytań/h (przerwy serwisowe), więc 500 leadów to ok. 15 h pracy na partię.
 # Start co 3 godziny, całą dobę i w weekend (minuty w publicznym repo są darmowe). Przebiegi idą po kolei (concurrency),
 # a przebieg, który zastanie pełną partię, kończy się po minucie. Weekendowe przebiegi zbierają na poniedziałek.
